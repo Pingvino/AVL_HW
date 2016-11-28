@@ -25,7 +25,7 @@ AVL_TREE* create_bst_tree();//ok
 T_NODE* find_smallest_node(T_NODE* root);//ok
 T_NODE* find_largest_node(T_NODE* root);//ok
 T_NODE* search_bst(T_NODE* root, int key);//ok
-T_NODE* delete_bst(T_NODE* root, int data, bool* success);
+T_NODE* delete_rotate(T_NODE* root, int data, bool* success);
 
 T_NODE* insert_rotate(T_NODE root, T_NODE* new_node, bool* taller);
 T_NODE* balance_left(T_NODE* root, bool* taller);

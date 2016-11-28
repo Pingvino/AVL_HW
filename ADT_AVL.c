@@ -31,17 +31,72 @@ T_NODE* search_bst(T_NODE* root, int key) {
 		return root;
 }
 
-T_NODE* delete_bst(T_NODE* root, int data, bool* success) {
+T_NODE* delete_rotate(T_NODE* root, int data, bool* success, bool* shorter) {
 	if(root == NULL) {
 		*success = false;
 		return NULL;
 	}
 	//traverse
 	if(data < root->data)
-		root->left = delete_bst(root->left, data, success);
+		printf("%d < %d\n",data, root->data);
+		root->left = delete_rotate(root->left, data, success, shorter);
+		if(*shorter) {
+			switch(root->balance) {
+				case LH:
+					printf("deleting (%d) node to LH parent(%d)'s left\n",
+					data, root->data);
+					root->balance = EH;
+					printf("(%d) root balance = %s\n",
+					root->data,print_balance(root->balance));
+					*shorter = false;
+					break;
+				case EH:
+					printf("deleting (%d) node to EH parent(%d)'s left\n",
+					data, root->data);
+					root->balance = RH;
+					printf("(%d) root balance = %s\n",
+					root->data,print_balance(root->balance));
+					break;
+				case RH:
+					printf("deleting (%d) node to RH parent(%d)'s left\n",
+					data, root->data);
+					root = balance_right(root,shorter);
+					printf("(%d) root balance = %s\n",
+					root->data,print_balance(root->balance));
+					break;
+			}
+		}
 	else if(data > root->data)
-		root->right = delete_bst(root->right, data, success);
+		printf("%d > %d\n",data, root->data);
+		root->right = delete_rotate(root->right, data, success, shorter);
+			if(*shorter) {
+			switch(root->balance) {
+				case LH:
+					printf("deleting (%d) node to LH parent(%d)'s right\n",
+					data, root->data);
+					root = balance_left(root,shorter);
+					printf("(%d) root balance = %s\n",
+					root->data,print_balance(root->balance));
+					break;
+				case EH:
+					printf("deleting (%d) node to EH parent(%d)'s right\n",
+					data, root->data);
+					root->balance = LH;
+					printf("(%d) root balance = %s\n",
+					root->data,print_balance(root->balance));
+					break;
+				case RH:
+					printf("deleting (%d) node to RH parent(%d)'s right\n",
+					data, root->data);
+					root->balance = EH;
+					printf("(%d) root balance = %s\n",
+					root->data,print_balance(root->balance));
+					*shorter = false;
+					break;
+			}
+		}
 	else { //matched
+		printf("%d = %d\n",data, root->data);
 		T_NODE* deleted_node = root;//backup
 		if(root->left == NULL) {
 			T_NODE* newRoot = root->right;
@@ -58,8 +113,9 @@ T_NODE* delete_bst(T_NODE* root, int data, bool* success) {
 			while(search->right != NULL)
 				search = search->right;
 			root->data = search->data;
-			root->left = delete_bst(root->left, search->data, success);
+			root->left = delete_rotate(root->left, search->data, success, shorter);
 		}
+	*shorter = true;
 	}
 	return root;
 }
@@ -135,22 +191,23 @@ T_NODE* insert_rotate(T_NODE* root, T_NODE* new_node, bool* taller) {
 }
 
 T_NODE* balance_left(T_NODE* root, bool* taller) {
-//	printf("\ninitializing balance_left...\n");
+	printf("\ninitializing balance_left...\n");
 	T_NODE* right_tree;
 	T_NODE* left_tree;
 	left_tree = root->left;
 	switch(left_tree->balance) {
 		case LH:
-//			printf("RH case\n");
+			printf("LH case\n");
 			root->balance = EH;
 			left_tree->balance = EH;
 			root = rotate_right(root);
 			*taller = false;
+			*shorter = false;
 			break;
 		case EH:
 			exit(0);
 		case RH: //right of left
-//			printf("RH case\n");
+			printf("RH case\n");
 			right_tree = left_tree->right;
 			switch(right_tree->balance) {
 				case LH:
@@ -170,28 +227,30 @@ T_NODE* balance_left(T_NODE* root, bool* taller) {
 			root->left = rotate_left(left_tree);
 			root = rotate_right(root);
 			*taller = false;
+			*shorter = false;
 	} //end of switch
-//	printf("after balance_left, balance of root(%d) = %s\n\n",
-//	root->data, print_balance(root->balance));
+	printf("after balance_left, balance of root(%d) = %s\n\n",
+	root->data, print_balance(root->balance));
 	return root;
 }
 
 T_NODE* balance_right(T_NODE* root, bool* taller) {
-//	printf("\ninitializing balance_right...\n");
+	printf("\ninitializing balance_right...\n");
 	T_NODE* right_tree;
 	T_NODE* left_tree;
 	right_tree = root->right;
 	switch(right_tree->balance) {
 		case RH:
-//			printf("RH case\n");
+			printf("RH case\n");
 			root->balance = EH;
 			right_tree->balance = EH;
 			root = rotate_left(root);
 			*taller = false;
+			*shorter = false;
 			break;
 		case EH: exit(0);
 		case LH: //left of right
-//			printf("LH case\n");
+			printf("LH case\n");
 			left_tree = right_tree->left;
 			switch(left_tree->balance) {
 				case LH:
@@ -211,29 +270,30 @@ T_NODE* balance_right(T_NODE* root, bool* taller) {
 			root->right = rotate_right(right_tree);
 			root = rotate_left(root);
 			*taller = false;
+			*shorter = false;
 	} //end of switch
-//	printf("after balance_right, balance of root(%d) = %s\n\n",
-//	root->data, print_balance(root->balance));
+	printf("after balance_right, balance of root(%d) = %s\n\n",
+	root->data, print_balance(root->balance));
 	return root;
 }
 
 T_NODE* rotate_left(T_NODE* root) {
-//	printf("rotating left... root is now (%d)\n",root->data);
+	printf("rotating left... root is now (%d)\n",root->data);
 	T_NODE* new_root;
 	new_root = root->right;
 	root->right = new_root->left;
 	new_root->left = root;
-//	printf("rotated left... root is now (%d)\n\n",new_root->data);
+	printf("rotated left... root is now (%d)\n\n",new_root->data);
 	return new_root;
 	}
 
 T_NODE* rotate_right(T_NODE* root) {
-//	printf("rotating right... root is now (%d)\n",root->data);
+	printf("rotating right... root is now (%d)\n",root->data);
 	T_NODE* new_root;
 	new_root = root->left;
 	root->left = new_root->right;
 	new_root->right = root;
-//	printf("rotated right... root is now (%d)\n\n",new_root->data);
+	printf("rotated right... root is now (%d)\n\n",new_root->data);
 	return new_root;
 	}
 
@@ -256,15 +316,19 @@ bool AVL_insert(AVL_TREE* tree, int data) {
 }
 
 bool AVL_delete(AVL_TREE* tree, int data) {
+	printf("deleting %d...\n",data);
 	bool success;
+	bool shorter;
 	T_NODE* newRoot;
-	newRoot = delete_bst(tree->root, data, &success);
+	newRoot = delete_rotate(tree->root, data, &success, &shorter);
 	if(success) {
 		tree->root = newRoot;
 		(tree->count)--;
 		if(tree->count == 0)
 			tree->root = NULL;
 	}
+	printf("After delet, root is (%d), balance = %s\n\n",
+	tree->root->data, print_balance(tree->root->balance));
 	return success;
 }
 
